@@ -12,8 +12,7 @@ module fetch (instr, pc_inc, pc_new, clk, rst);
    output wire pc_inc[15:0];
 
    input wire pc_new[15:0];
-   input      clk;
-   input      rst;
+   input wire clk, rst;
    input      halt; // Need halt input for mux to pc      
 
    wire       pc_current[15:0];
