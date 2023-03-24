@@ -21,17 +21,19 @@ module shifter (InBS, ShAmt, ShiftOper, OutBS);
     output wire [OPERAND_WIDTH -1:0] OutBS;  // Result of shift/rotate
 
    /* YOUR CODE HERE */
-   wire [OPERAND_WIDTH -1:0] sllOut;
-   wire [OPERAND_WIDTH -1:0] srlOut;
-   wire [OPERAND_WIDTH -1:0] rolOut;
-   wire [OPERAND_WIDTH -1:0] sraOut;
+   // Intermediate wires to hold different shift results
+   wire [OPERAND_WIDTH -1:0] 	     sl_result;
+   wire [OPERAND_WIDTH -1:0] 	     srl_result;
+   wire [OPERAND_WIDTH -1:0] 	     rl_result;
+   wire [OPERAND_WIDTH -1:0] 	     sra_result;
+  
+   // Istantiate sub-modules to do different shift operations
+   sl sl0(.OutBS(sl_result), .ShAmt(ShAmt), .InBS(InBS));
+   srl srl0(.OutBS(srl_result), .ShAmt(ShAmt), .InBS(InBS));
+   rl rl0(.OutBS(rl_result), .ShAmt(ShAmt), .InBS(InBS));
+   sra sra0(.OutBS(sra_result), .ShAmt(ShAmt), .InBS(InBS));
 
-   sll sllOp(.InBS(InBS),.ShAmt(ShAmt),.OutBS(sllOut));
-   srl srlOp(.InBS(InBS),.ShAmt(ShAmt),.OutBS(srlOut));
-   rol rolOp(.InBS(InBS),.ShAmt(ShAmt),.OutBS(rolOut));
-   sra sraOp(.InBS(InBS),.ShAmt(ShAmt),.OutBS(sraOut));
-
-   mux4_1_4b opSel[3:0](.out(OutBS),.inputA(sllOut),.inputB(srlOut),.inputC(rolOut),.inputD(sraOut),.sel(ShiftOper));
+   assign OutBS = ShiftOper[1] ? (ShiftOper[0] ? sra_result : rl_result) : (ShiftOper[0] ? srl_result : sl_result); 	     
    
 endmodule
 `default_nettype wire

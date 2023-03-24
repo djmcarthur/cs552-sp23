@@ -1,13 +1,8 @@
 /*
     CS/ECE 552 Spring '23
-    Homework #2, Problem 2
+    ALU for project
 
-    A multi-bit ALU module (defaults to 16-bit). It is designed to choose
-    the correct operation to perform on 2 multi-bit numbers from rotate
-    left, shift left, shift right arithmetic, shift right logical, add,
-    or, xor, & and.  Upon doing this, it should output the multi-bit result
-    of the operation, as well as drive the output signals Zero and Overflow
-    (OFL).
+   
 */
 `default_nettype none
 module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
@@ -27,46 +22,56 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
     output wire                      Zero; // Signal if Out is 0
 
     /* YOUR CODE HERE */
-    wire [OPERAND_WIDTH -1:0] inAOp;
-    wire [OPERAND_WIDTH -1:0] inBOp;
-    wire [OPERAND_WIDTH -1:0] opRes;
-    wire [OPERAND_WIDTH -1:0] shiftOut;
-    wire [OPERAND_WIDTH -1:0] addOut;
-    wire [OPERAND_WIDTH -1:0] andOut;
-    wire [OPERAND_WIDTH -1:0] orOut;
-    wire [OPERAND_WIDTH -1:0] xorOut;
-    wire of;
-    wire cOut;
+    // Wires for inverted version of signals
+    wire [OPERAND_WIDTH -1:0] nInA;
+    wire [OPERAND_WIDTH -1:0] nInB;
 
-    assign Zero = ~(|Out);
+    // Wires for operands being used (Either A and B or inversions)
+    wire [OPERAND_WIDTH -1:0] opA;
+    wire [OPERAND_WIDTH -1:0] opB;
 
-    // overflow logic
-    assign of = (Oper != 3'b100) ? (1'b0) : ((sign) ? ((opRes[15] & ~inAOp[15] & ~inBOp[15])
-    		| (~opRes[15] & inAOp[15] & inBOp[15])) : cOut);
+    // Intermediate wires to hold results of all different operations
+    wire [OPERAND_WIDTH -1:0] 	     sl_result;
+    wire [OPERAND_WIDTH -1:0] 	     srl_result;
+.    wire [OPERAND_WIDTH -1:0] 	     rl_result;
+    wire [OPERAND_WIDTH -1:0] 	     rr_result;
+    wire [OPERAND_WIDTH -1:0] 	     add_result;
+    wire [OPERAND_WIDTH -1:0] 	     sub_result; 
+    wire [OPERAND_WIDTH -1:0] 	     xor_result; 
+    wire [OPERAND_WIDTH -1:0] 	     andn_result;
+    wire 			     cOut;
+   
+    // Inversion operations (NOT gates in hardware)
+    assign nInA = ~InA;
+    assign nInB = ~InB;
 
-    assign Ofl = (Oper[2]) ? (of) : (1'b0);
+    // 2:1 MUXes to select between inverted and noninverted operands
+    assign opA = invA ? nInA : InA;
+    assign opB = invB ? nInB : InB;
+  
+    // Istantiate sub-modules to do different shift operations
+    sl sl0(.OutBS(sl_result), .ShAmt(opB[3:0]), .InBS(opA));
+    srl srl0(.OutBS(srl_result), .ShAmt(opB[3:0]), .InBS(opA));
+    rl rl0(.OutBS(rl_result), .ShAmt(opB[3:0]), .InBS(opA));
+    rr rr0(.OutBS(rr_result), .ShAmt(opB[3:0]), .InBS(opA));
+    cla16b cla(.sum(add_result), .cOut(cOut), .inA(opA), .inB(opB), .cIn(Cin), .sub(Oper[0]));
 
-    // define our AND, OR, XOR logic outs
-    assign andOut = inAOp & inBOp;
-    assign orOut  = inAOp | inBOp;
-    assign xorOut = inAOp ^ inBOp;
+    // AND operation (16 AND gates in hardware)
+    assign andn_result = opA & ~opB;
 
-    // USE THESE VALUES for A and B
-    assign inAOp = (invA) ? (~InA) : (InA);
-    assign inBOp = (invB) ? (~InB) : (InB);
+    // XOR operation (16 XOR gates in hardware)
+    assign xor_result = opA ^ opB;
 
-    // instantiate a shifter
-    shifter aluShifter(.InBS(inAOp),.ShAmt(inBOp[3:0]),.ShiftOper(Oper[1:0]),.OutBS(shiftOut));
+    // Assign output based on Oper
+    // Would be 8:1 Mux in hardware
+    assign Out = Oper[2] ? (Oper[1] ? (Oper[0] ? andn_result : xor_result) : (Oper[0] ? sub_result : add_result)) : (Oper[1] ? (Oper[0] ? rr_result : rl_result) : (Oper[0] ? srl_result : sl_result));
 
-    // ADD
-    cla16b aluAdder(.sum(addOut),.cOut(cOut),.inA(inAOp),.inB(inBOp),.cIn(Cin));
+    // Assign Ofl
+    assign Ofl = sign ? ((~opA[15] & ~ opB[15] & add_result[15]) | (opA[15] & opB[15] & ~add_result[15])) : cOut;
 
-    // All operations are done in parallel -- here we select which one we are
-    // interested in.
-    mux4_1_4b aluOpMux[3:0](.out(opRes),.inputA(addOut),.inputB(andOut),.inputC(orOut),.inputD(xorOut),.sel(Oper[1:0]));
-
-    // one more mux... 
-    mux2_1 aluOutMux[15:0](.out(Out),.inputA(shiftOut),.inputB(opRes),.sel(Oper[2]));
+    // Nor reduction to set Zero if Out = 16'b0
+    assign Zero = ~|Out;
+  
     
 endmodule
 `default_nettype wire

@@ -5,27 +5,25 @@
     a 1-bit full adder
 */
 `default_nettype none
-module fullAdder1b(s, cOut, gen, prop, inA, inB, cIn);
+module fullAdder1b(s, cOut, inA, inB, cIn, sub);
     output wire s;
     output wire cOut;
-    output wire gen, prop;
     input  wire inA, inB;
+    input  wire sub;
     input  wire cIn;
 
     // YOUR CODE HERE
-    wire xor2_1_o;
-    wire and2_1_o;
-    wire and2_2_o;
+   wire 	gen, prop, propAndcIn;
+   wire 	opB;
 
-    xor2 xor2_1(.out(xor2_1_o),.in1(inA     ),.in2(inB     ));
-    xor2 xor2_2(.out(s       ),.in1(xor2_1_o),.in2(cIn     ));
-    and2 and2_1(.out(and2_1_o),.in1(xor2_1_o),.in2(cIn     ));
-    and2 and2_2(.out(and2_2_o),.in1(inA     ),.in2(inB     ));
-    or2  or2_1 (.out(cOut    ),.in1(and2_1_o),.in2(and2_2_o));
+   xor2 xor2_0(.out(opB), .in1(sub), .in2(inB));
 
-    // generate and propagate signals
-    and2 genlogic(.out(gen ),.in1(inA),.in2(inB));
-    or2 proplogic(.out(prop),.in1(inA),.in2(inB)); 
+   xor2 xor2_1(.out(prop), .in1(inA), .in2(opB));
+   and2 and2_1(.out(gen),.in1(inA), .in2(opB));
+   and2 and2_2(.out(propAndcIn), .in1(cIn), .in2(prop));
+   xor2 xor2_2(.out(s), .in1(prop), .in2(cIn));
+   or2 or2_1(.out(cOut), .in1(gen), .in2(propAndcIn));   
+   
 
 endmodule
 `default_nettype wire
