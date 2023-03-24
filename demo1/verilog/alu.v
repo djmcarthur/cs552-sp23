@@ -35,7 +35,7 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl, equal, lt, lt
     // Intermediate wires to hold results of all different operations
     wire [OPERAND_WIDTH -1:0] 	     sl_result;
     wire [OPERAND_WIDTH -1:0] 	     srl_result;
-.   wire [OPERAND_WIDTH -1:0] 	     rl_result;
+    wire [OPERAND_WIDTH -1:0] 	     rl_result;
     wire [OPERAND_WIDTH -1:0] 	     rr_result;
     wire [OPERAND_WIDTH -1:0] 	     add_result;
     wire [OPERAND_WIDTH -1:0] 	     sub_result; 
@@ -77,7 +77,7 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl, equal, lt, lt
     assign Zero = ~|Out;
 
     // set equal flag
-    assign equal = (inA == inB) ? 1'b1 : 1'b0;
+    assign equal = (InA == InB) ? 1'b1 : 1'b0;
 
     // assign lt flag
     assign lt = sub_result[15] ? 1'b0 : 1'b1;
