@@ -5,7 +5,7 @@
    
 */
 `default_nettype none
-module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
+module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl, equal, lt, lte, cOut);
 
     parameter OPERAND_WIDTH = 16;    
     parameter NUM_OPERATIONS = 3;
@@ -20,6 +20,8 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
     output wire [OPERAND_WIDTH -1:0] Out ; // Result of comput wireation
     output wire                      Ofl ; // Signal if overflow occured
     output wire                      Zero; // Signal if Out is 0
+    output wire 			     equal, lt, lte;
+   
 
     /* YOUR CODE HERE */
     // Wires for inverted version of signals
@@ -33,13 +35,14 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
     // Intermediate wires to hold results of all different operations
     wire [OPERAND_WIDTH -1:0] 	     sl_result;
     wire [OPERAND_WIDTH -1:0] 	     srl_result;
-.    wire [OPERAND_WIDTH -1:0] 	     rl_result;
+.   wire [OPERAND_WIDTH -1:0] 	     rl_result;
     wire [OPERAND_WIDTH -1:0] 	     rr_result;
     wire [OPERAND_WIDTH -1:0] 	     add_result;
     wire [OPERAND_WIDTH -1:0] 	     sub_result; 
     wire [OPERAND_WIDTH -1:0] 	     xor_result; 
     wire [OPERAND_WIDTH -1:0] 	     andn_result;
-    wire 			     cOut;
+    output wire 			     cOut;
+    wire 				     cOut_sub; 				     
    
     // Inversion operations (NOT gates in hardware)
     assign nInA = ~InA;
@@ -54,7 +57,8 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
     srl srl0(.OutBS(srl_result), .ShAmt(opB[3:0]), .InBS(opA));
     rl rl0(.OutBS(rl_result), .ShAmt(opB[3:0]), .InBS(opA));
     rr rr0(.OutBS(rr_result), .ShAmt(opB[3:0]), .InBS(opA));
-    cla16b cla(.sum(add_result), .cOut(cOut), .inA(opA), .inB(opB), .cIn(Cin), .sub(Oper[0]));
+    cla16b cla_add(.sum(add_result), .cOut(cOut), .inA(opB), .inB(opA), .cIn(Cin), .sub(1'b0)); // opA and opB flipped since sub and subi subtract Rs
+    cla16b cla_sub(.sum(sub_result), .cOut(cOut_sub), .inA(opB), .inB(opA), .cIn(Cin), .sub(1'b1)); // opA and opB flipped since sub and subi subtract Rs
 
     // AND operation (16 AND gates in hardware)
     assign andn_result = opA & ~opB;
@@ -71,7 +75,15 @@ module alu (InA, InB, Cin, Oper, invA, invB, sign, Out, Zero, Ofl);
 
     // Nor reduction to set Zero if Out = 16'b0
     assign Zero = ~|Out;
-  
-    
+
+    // set equal flag
+    assign equal = (inA == inB) ? 1'b1 : 1'b0;
+
+    // assign lt flag
+    assign lt = sub_result[15] ? 1'b0 : 1'b1;
+
+    // assign lt flag
+    assign lte = lt | equal;
+   
 endmodule
 `default_nettype wire
