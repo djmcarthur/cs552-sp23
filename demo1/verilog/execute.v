@@ -23,6 +23,9 @@ module execute (pc_inc_in, pc_new, alu_res, instr_10_2_out, alu_cond,
    input wire [15:0] zero_ext_5_16;
    input wire [15:0] zero_ext_8_16;
    input wire [10:2] instr_10_2_in;
+
+
+   alu ex_alu(.InA(),.InB(),.Cin(),.Oper(),.invA(),.invB(),.sign(),.Out(),.Zero(),.Ofl()); 
    
 endmodule
 `default_nettype wire
