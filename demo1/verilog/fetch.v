@@ -28,8 +28,8 @@ module fetch (instr, pc_inc, pc_new, clk, rst);
    // mux to determine next pc value we take
    assign next_pc = (halt & (~rst)) ? pc_current : pc_new;
 
-   cla16b add_pc(.sum(pc_inc), .c_out(), .a(pc_current), .b(16'd2), .c_in(1'b0));
-
+   // Adder to increment PC
+   cla16b add_pc(.sum(pc_inc), .cOout(), .inA(pc_current), .inB(16'd2), .cIn(1'b0), .sub(1'b0));
    
 endmodule
 `default_nettype wire
