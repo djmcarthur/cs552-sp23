@@ -24,6 +24,20 @@ module proc (/*AUTOARG*/
    
    
    /* your code here -- should include instantiations of fetch, decode, execute, mem and wb modules */
+
+   wire [15:0] instr, pc_inc, pc_new, read_data1, read_data2, alu_res;
+   wire mem_read, mem_write;
+   wire halt;
+
+   fetch proc_f(.instr(instr),.pc_inc(pc_inc),.pc_new(pc_new),.halt(halt),.clk(clk),.rst(rst));
+
+   decode proc_d(.read_data1(read_data1),.read_data2(read_data2),.se_11_16(),.se_8_16(),.se_5_16(),.ze_8_16(),.ze_5_16(),.pc_inc_out(pc_inc),.pc_inc_in(pc_inc),.write_data_in(),.clk(clk),.rst(rst),.err(err),.writeEn(),.instr(instr));
+
+   execute proc_x(.pc_inc_in(pc_inc),.pc_new(),.alu_res(alu_res),.alu_cond(),.read_data1_in(),.read_data2_in(),.se_11_16(),.se_8_16(),.se_5_16(),.ze_5_16(),.ze_8_16(),.clk(clk),.rst(rst),.PCAddSel(),.PCImmSel(), aluSrc());
+
+   memory proc_m(mem_data(),.alu_res_out(),.alu_cond_out(),.pc_inc_out(),.mem_read(),.mem_write(),.alu_cond_in(),.alu_res_in(),.pc_inc_in(),.data_in(),.instr(),.halt(),.writeDataSel(),.clk(clk),.rst(rst));
+
+   wb proc_wb(.reg_write_data(),.pc_inc_in(),.alu_res_in(),.mem_data(),.alu_cond_in(),.clk(clk),.rst(rst));
    
 endmodule // proc
 `default_nettype wire
