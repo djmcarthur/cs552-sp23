@@ -301,7 +301,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
 
             5'b11010: begin 
                 casex(instr[1:0]) 
-                    2'b00: begin // ROL ✅
+                    2'b10: begin // ROL ✅
                         reg_write_data_sel = 2'b01; // alu res
                         alu_op = 4'd0; // rol
                         mem_read = 1'b0; // we aint readin or writin
@@ -311,7 +311,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
                     end
-                    2'b01: begin // SLL ✅
+                    2'b00: begin // SLL ✅
                         reg_write_data_sel = 2'b01; // alu res
                         alu_op = 4'd1;   // sll
                         mem_read = 1'b0;
@@ -321,7 +321,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
                     end
-                    2'b10: begin // ROR ✅
+                    2'b11: begin // ROR ✅
                         reg_write_data_sel = 2'b01; // alu res
                         alu_op = 4'd2; // ror
                         mem_read = 1'b0; // we aint readin or writin
@@ -331,7 +331,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
                     end
-                    2'b11: begin // SRL ✅
+                    2'b01: begin // SRL ✅
                         reg_write_data_sel = 2'b01; // alu res
                         alu_op = 4'd3; // srl
                         mem_read = 1'b0; // we aint readin or writin
