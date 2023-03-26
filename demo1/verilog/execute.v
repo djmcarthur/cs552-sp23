@@ -6,7 +6,7 @@
 */
 `default_nettype none
 module execute (pc_inc_in, pc_new, alu_res, alu_cond,
-		read_data1_in, read_data2_in, se_11_16, se_8_16, se_5_16, ze_5_16, ze_8_16, clk, rst. PCAddSel, PCImmSel, aluSrc);
+		read_data1_in, read_data2_in, se_11_16, se_8_16, se_5_16, ze_5_16, ze_8_16, clk, rst. PCAddSel, PCImmSel, alu_src, alu_op);
 
    // TODO: Your code here
    output wire [15:0] pc_inc_in;
@@ -24,7 +24,9 @@ module execute (pc_inc_in, pc_new, alu_res, alu_cond,
    input wire [15:0] ze_8_16;
    input wire 	     PCAddSel;
    input wire 	     PCImmSel;
-   input wire [2:0] 	 aluSrc;
+   input wire [2:0] 	 alu_src;
+   input wire [3:0] 	 alu_op;
+ 	 
  
    //input wire [10:2] instr_10_2_in; // Not sure on purpose
 
@@ -36,14 +38,15 @@ module execute (pc_inc_in, pc_new, alu_res, alu_cond,
    wire [15:0] 	     InB;
 
    // Mux to choose inB for alu
-   assign InB = aluSrc[2] ?  (aluSrc[0] ? ze_8_16 : ze_5_16) : (aluSrc[1] ? (aluSrc[0] ? se_5_16 : 16'b0) : (aluSrc[0] ? read_data2_in : se_8_16));
+   assign InB = alu_src[2] ?  (alu_src[0] ? ze_8_16 : ze_5_16) : (alu_src[1] ? (alu_src[0] ? se_5_16 : 16'b0) : (alu_src[0] ? read_data2_in : se_8_16));
 
    // Muxes and adder for PC
    assign pc_add_A = PCAddSel ? read_data1_in : pc_inc_in;
    assign pc_add_B = PCImmSel ? se_8_16 : se_11_16;
+   
    cla16b pc_add(.sum(pc_new), .cOut(), .inA(pc_add_A), .inB(pc_add_B), .cIn(1'b0), .sub(1'b0));
    
-   alu ex_alu(.InA(read_data1_in), .InB(InB), .Cin(1'b0), .Oper(), .invA(1'b0), .invB(1'b0), .sign(1'b0), .Out(alu_res), .Zero(), .Ofl(), .equal(), .lt(), .lte(), .cOut()); 
+   alu ex_alu(.InA(read_data1_in), .InB(InB), .Cin(1'b0), .Oper(alu_op), .invA(1'b0), .invB(1'b0), .sign(1'b0), .Out(alu_res), .Zero(), .Ofl(), .cOut()); 
    
 endmodule
 `default_nettype wire
