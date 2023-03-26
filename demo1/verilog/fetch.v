@@ -5,22 +5,22 @@
    Description     : This is the module for the overall fetch stage of the processor.
 */
 `default_nettype none
-module fetch (instr, pc_inc, pc_new, clk, rst);
+module fetch (instr, pc_inc, pc_new, halt, clk, rst);
 
    // TODO: Your code here
-   output wire instr[15:0];
-   output wire pc_inc[15:0];
+   output wire [15:0] instr;
+   output wire [15:0] pc_inc;
 
-   input wire pc_new[15:0];
+   input wire [15:0] pc_new;
    input wire clk, rst;
    input      halt; // Need halt input for mux to pc      
 
-   wire       pc_current[15:0];
+   wire       [15:0] pc_current;
    wire       next_pc;
    
 
-   // PC Counter
-   dff pc [15:0](.q(instr), .d(pc_current), .clk(clk), .rst(rst));
+   // PC
+   dff pc [15:0](.q(pc_current), .d(next_pc), .clk(clk), .rst(rst));
 
    // Instruction memory instantiation
    memory2c instr_mem(.data_out(instr),.data_in(16'b0),.addr(pc_current),.enable(1'b1),.wr(1'b0),.createdump(halt),.clk(clk),.rst(rst));
@@ -29,7 +29,7 @@ module fetch (instr, pc_inc, pc_new, clk, rst);
    assign next_pc = (halt & (~rst)) ? pc_current : pc_new;
 
    // Adder to increment PC
-   cla16b add_pc(.sum(pc_inc), .cOout(), .inA(pc_current), .inB(16'd2), .cIn(1'b0), .sub(1'b0));
+   cla16b add_pc(.sum(pc_inc), .cOut(), .inA(pc_current), .inB(16'd2), .cIn(1'b0), .sub(1'b0));
    
 endmodule
 `default_nettype wire
