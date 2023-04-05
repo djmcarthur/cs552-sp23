@@ -1,5 +1,6 @@
 `default_nettype none
 module MEM_WB(
+    MEM_WB_pc_inc,
     MEM_WB_halt,
     MEM_WB_rd,
     MEM_WB_reg_dst,
@@ -9,6 +10,7 @@ module MEM_WB(
     MEM_WB_reg_write_data_sel,
     MEM_WB_ex_res,
     MEM_WB_alu_cond_out,
+    pc_inc,
     data,
     EX_MEM_halt,
     EX_MEM_rd,
@@ -34,6 +36,10 @@ module MEM_WB(
     output wire MEM_WB_rs;
     output wire [1:0] MEM_WB_reg_write_data_sel;
 
+    input wire [15:0]  pc_inc;
+    output wire [15:0]  MEM_WB_pc_inc;
+   
+
     input wire EX_MEM_halt;
     input wire [2:0] EX_MEM_rd;
     input wire [1:0] EX_MEM_reg_dst;
@@ -53,6 +59,8 @@ module MEM_WB(
     dff alu_cond_out_reg(.q(MEM_WB_alu_cond_out), .d(EX_MEM_alu_cond_out), .clk(clk), .rst(rst));
     dff ex_res_reg[15:0] (.q(MEM_WB_ex_res), .d(EX_MEM_ex_res), .clk(clk), .rst(rst));
     dff data_reg[15:0] (.q(MEM_WB_data), .d(data), .clk(clk), .rst(rst));
+
+    dff pc_reg[15:0] (.q(MEM_WB_pc_inc), .d(pc_inc), .clk(clk), .rst(rst));
 
     //writeback
     dff reg_write_en_reg(.q(MEM_WB_reg_write_en), .d(EX_MEM_reg_write_en), .clk(clk), .rst(rst));

@@ -6,14 +6,14 @@
 */
 `default_nettype none
 module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg_dst, write_reg_en, MEM_WB_rd,
-               sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16, pc_a_sel, pc_b_sel, br, br_type, jump, rs, jal, clk, rst);
+               sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16, pc_a_sel, pc_b_sel, br, br_type, jump, rs, jal, clk, rst, sel_pc_new);
 
    output wire [15:0] read1, read2;
    output wire [15:0] next_pc;
    output wire err;
    output wire [15:0] sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16;
    output wire [2:0] reg_write;  // the register to be written back to
-
+   output wire 	     sel_pc_new; // NEW 4/4/23
 
    input wire [15:0] instr, wb_out, pc_inc;
    input wire clk, rst;
@@ -45,6 +45,7 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
                      (reg_dst == 2'b10) ? instr[4:2] :
                      (reg_dst == 2'b11) ? 3'b111 :
                      3'b111;
+   
    assign pc_a = (pc_a_sel) ? pc_inc : read1;
    assign pc_b = (pc_b_sel) ? sign_ext_11_16 : sign_ext_8_16;
 
@@ -63,8 +64,6 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
             pc_inc
    */
 
-
-
    assign next_pc = (jump) ? rs ? rs_imm : jmp_addr : 
                      br ? 
                         br_type == 2'b00 ? equals ? branch_addr : pc_inc :
@@ -72,6 +71,8 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
                         br_type == 2'b10 ? lt ? branch_addr : pc_inc :
                         br_type == 2'b11 ? gte ? branch_addr : pc_inc :
                         pc_inc : pc_inc;
+   
+   assign sel_pc_new = (next_pc == pc_inc) ? 1'b0 : 1'b1; // If next_pc is not pc_inc, taking branch or jump
 
    assign reg_in = (jal) ? pc_inc : wb_out;
 

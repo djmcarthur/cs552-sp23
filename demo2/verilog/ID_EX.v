@@ -1,5 +1,6 @@
 `default_nettype none
 module ID_EX(
+    ID_EX_pc_inc,
     ID_EX_halt,
     ID_EX_rd,
     ID_EX_reg_dst,
@@ -23,6 +24,11 @@ module ID_EX(
     ID_EX_sign_ext_5_16,
     ID_EX_sign_ext_8_16,
     ID_EX_zero_ext_5_16,
+    ID_EX_pc_new,
+    ID_EX_sel_pc_new,
+    sel_pc_new,
+    pc_new,
+    pc_inc,
     halt,
     rd,
     reg_dst,
@@ -77,6 +83,8 @@ module ID_EX(
     // writeback control out
     output wire [1:0] ID_EX_reg_write_data_sel;
     output wire ID_EX_rs;
+    output wire [15:0] ID_EX_pc_inc;
+   
 
     input wire halt;
     input wire [2:0] rd;
@@ -88,7 +96,14 @@ module ID_EX(
     input wire [15:0] sign_ext_5_16;
     input wire [15:0] sign_ext_8_16;
     input wire [15:0] zero_ext_5_16;
+    input wire [15:0] pc_inc;
 
+    // New 4/4/23 for branches jumps
+    output wire 	      ID_EX_sel_pc_new;
+    input wire 		      sel_pc_new;
+    input wire 	[15:0]	      pc_new;
+    input wire 	[15:0]	      ID_EX_pc_new;
+   
     // execute control in
     input wire reg_write_en;
     input wire swap;
@@ -105,6 +120,10 @@ module ID_EX(
     // writeback control in
     input wire [1:0] reg_write_data_sel;
     input wire rs;
+
+   // NEW 4/4/23 for branch/jump control
+   dff sel_pc_reg (.q(ID_EX_sel_pc_new), .d(sel_pc_new), .clk(clk), .rst(1'b0));
+   dff next_pc_reg [15:0](.q(ID_EX_pc_new), .d(pc_new), .clk(clk), .rst(1'b0));
 
     
     dff rd_reg[2:0] (.q(ID_EX_rd), .d(rd), .clk(clk), .rst(rst));
@@ -126,6 +145,8 @@ module ID_EX(
     //writeback
     dff reg_write_data_sel_reg[1:0] (.q(ID_EX_reg_write_data_sel), .d(reg_write_data_sel), .clk(clk), .rst(rst));
     dff rs_reg(.q(ID_EX_rs), .d(rs), .clk(clk), .rst(rst));
+    dff pc_reg [15:0](.q(ID_EX_pc_inc), .d(pc_inc), .clk(clk), .rst(rst));
+   
 
     dff read1_reg[15:0] (.q(ID_EX_read1), .d(read1), .clk(clk), .rst(rst));
     dff read2_reg[15:0] (.q(ID_EX_read2), .d(read2), .clk(clk), .rst(rst));
