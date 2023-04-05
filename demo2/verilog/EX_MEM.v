@@ -1,5 +1,6 @@
 `default_nettype none
 module EX_MEM(
+    EX_MEM_pc_inc,
     EX_MEM_halt,
     EX_MEM_rd,
     EX_MEM_reg_dst,
@@ -13,6 +14,7 @@ module EX_MEM(
     EX_MEM_read2,
     alu_cond_out,
     ex_res,
+    pc_inc,
     ID_EX_halt,
     ID_EX_rd,
     ID_EX_reg_dst,
@@ -28,6 +30,11 @@ module EX_MEM(
 
     output wire EX_MEM_halt;
     output wire [2:0] EX_MEM_rd;
+
+   input wire [15:0]  pc_inc;
+   output wire [15:0] EX_MEM_pc_inc;
+   
+   
     // pipe alu res out
     output wire [1:0] EX_MEM_reg_dst;
     output wire [15:0] EX_MEM_ex_res;
@@ -71,6 +78,7 @@ module EX_MEM(
     dff reg_write_data_sel_reg[1:0] (.q(EX_MEM_reg_write_data_sel), .d(ID_EX_reg_write_data_sel), .clk(clk), .rst(rst));
     dff rs_reg(.q(EX_MEM_rs), .d(ID_EX_rs), .clk(clk), .rst(rst));
     dff reg_write_en_reg(.q(EX_MEM_reg_write_en), .d(ID_EX_reg_write_en), .clk(clk), .rst(rst));
+    dff pc_reg [15:0](.q(EX_MEM_pc_inc), .d(pc_inc), .clk(clk), .rst(rst));
 
     // alu res
     dff ex_res_reg[15:0] (.q(EX_MEM_ex_res), .d(ex_res), .clk(clk), .rst(rst));
