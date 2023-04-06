@@ -1,12 +1,13 @@
 /*
-   CS/ECE 552 Spring '20
+   CS/ECE 552 Spring '22
   
    Filename        : decode.v
    Description     : This is the module for the overall decode stage of the processor.
 */
 `default_nettype none
 module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg_dst, write_reg_en, MEM_WB_rd,
-               sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16, pc_a_sel, pc_b_sel, br, br_type, jump, rs, jal, clk, rst, sel_pc_new);
+               sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16, pc_a_sel, pc_b_sel, br, br_type, jump, rs, jal, clk, rst, sel_pc_new, stall, flush);
+ //rs_reg, rt_reg);
 
    output wire [15:0] read1, read2;
    output wire [15:0] next_pc;
@@ -14,7 +15,9 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
    output wire [15:0] sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16;
    output wire [2:0] reg_write;  // the register to be written back to
    output wire 	     sel_pc_new; // NEW 4/4/23
+   output wire       flush;      // Destroy anything past decode if taking jump/branch
 
+   input wire 	     stall; // Don't want to be writing to mem while stalling
    input wire [15:0] instr, wb_out, pc_inc;
    input wire clk, rst;
    input wire [1:0] reg_dst;
@@ -55,15 +58,6 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
 
    cla_16b branch_add(.sum(branch_addr), .c_out(), .a(pc_inc), .b(sign_ext_8_16), .c_in(1'b0));
 
-   //br is the enable for branching  [1:0] br_type =  {equal, not equal, less than, greater than}
-   // also need to incorperate this into the next_pc assign statement
-   /* br ? br_type[0] ? equals ? branch_addr : pc_inc : 
-            br_type[1] ? ~equals ? branch_addr : pc_inc :
-            br_type[2] ? lt ? branch_addr : pc_inc :  
-            br_type[3] ? gt ? branch_addr : pc_inc : 
-            pc_inc
-   */
-
    assign next_pc = (jump) ? rs ? rs_imm : jmp_addr : 
                      br ? 
                         br_type == 2'b00 ? equals ? branch_addr : pc_inc :
@@ -74,6 +68,8 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
    
    assign sel_pc_new = (next_pc == pc_inc) ? 1'b0 : 1'b1; // If next_pc is not pc_inc, taking branch or jump
 
+   assign flush = sel_pc_new & ~jal & ~jump;  // Meaningless assign, just to get more clear naming
+
    assign reg_in = (jal) ? pc_inc : wb_out;
 
    regFile_bypass regFile0(.read1Data(read1), .read2Data(read2), .err(), .clk(clk), .rst(rst), .read1RegSel(instr[10:8]), .read2RegSel(instr[7:5]), 
@@ -83,18 +79,12 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
 
    assign overflow = (add_out[15] & ~read1[15]);
 
+
    // Condition codes
-
-   assign lt = (read1[15] & (read1 != '0)); //CHANGE WONT PASS VCHECK
-   //(add != 16'h0000) & (add_out[15] == ~overflow);
-
+   assign lt = (read1[15] & (read1 != '0));
    assign equals = (read1 == 16'b0);
-
    assign lte = lt | equals;
-
-   assign gt = (~read1[15] & read1 != '0); //CHANGE WONT PASS VCHECK
-   //(add != 16'h0000) & (add_out[15] == 1'b0);
-
+   assign gt = (~read1[15] & read1 != '0);
    assign gte = gt | equals;
 
 endmodule

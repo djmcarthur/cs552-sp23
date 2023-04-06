@@ -5,7 +5,7 @@
    Description     : This is the module for the overall fetch stage of the processor.
 */
 `default_nettype none
-module fetch (instr, pc_inc, next_pc, halt, clk, rst, sel_pc_new);
+module fetch (instr, pc_inc, next_pc, halt, clk, rst, sel_pc_new, stall);
 
    output wire [15:0] instr;
    output wire [15:0] pc_inc;
@@ -15,11 +15,10 @@ module fetch (instr, pc_inc, next_pc, halt, clk, rst, sel_pc_new);
 
    wire [15:0] instr_addr;
    wire [15:0] nxt_pc;
-   input wire  sel_pc_new;
-   
+   input wire  sel_pc_new, stall;
    
 
-   assign nxt_pc = (halt & (~rst)) ? instr_addr : 
+   assign nxt_pc = ((halt & (~rst)) | stall) ? instr_addr : 
 		   sel_pc_new ? next_pc : pc_inc;
 
    cla_16b add_pc(.sum(pc_inc), .c_out(), .a(instr_addr), .b(16'd2), .c_in(1'b0));

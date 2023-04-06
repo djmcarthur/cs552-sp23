@@ -20,7 +20,7 @@ module MEM_WB(
     EX_MEM_reg_write_data_sel,
     EX_MEM_ex_res,
     EX_MEM_alu_cond_out,
-    clk, rst);
+    clk, rst, flush);
 
     input wire clk, rst;
 
@@ -52,6 +52,9 @@ module MEM_WB(
     input wire EX_MEM_rs;
     input wire [1:0] EX_MEM_reg_write_data_sel;
 
+    input wire 	     flush;
+   
+
     dff reg_dst_reg[1:0] (.q(MEM_WB_reg_dst), .d(EX_MEM_reg_dst), .clk(clk), .rst(rst));
     
     dff halt_reg(.q(MEM_WB_halt), .d(EX_MEM_halt), .clk(clk), .rst(rst));
@@ -63,7 +66,7 @@ module MEM_WB(
     dff pc_reg[15:0] (.q(MEM_WB_pc_inc), .d(pc_inc), .clk(clk), .rst(rst));
 
     //writeback
-    dff reg_write_en_reg(.q(MEM_WB_reg_write_en), .d(EX_MEM_reg_write_en), .clk(clk), .rst(rst));
+    dff reg_write_en_reg(.q(MEM_WB_reg_write_en), .d(flush ? 1'b0 : EX_MEM_reg_write_en), .clk(clk), .rst(rst));
     dff rs_reg(.q(MEM_WB_rs), .d(EX_MEM_rs), .clk(clk), .rst(rst));
     dff reg_write_data_sel_reg[1:0] (.q(MEM_WB_reg_write_data_sel), .d(EX_MEM_reg_write_data_sel), .clk(clk), .rst(rst));
     

@@ -52,7 +52,7 @@ module ID_EX(
     read1,
     read2,
     err,
-    clk, rst);
+    clk, rst, stall, flush);
 
     input wire clk, rst;
 
@@ -84,8 +84,13 @@ module ID_EX(
     output wire [1:0] ID_EX_reg_write_data_sel;
     output wire ID_EX_rs;
     output wire [15:0] ID_EX_pc_inc;
-   
 
+
+    // If stalling gotta pass NOP equivalent down the line (i.e. no mem action or wb)
+    input wire 	       stall;
+    input wire 	       flush;
+   
+  
     input wire halt;
     input wire [2:0] rd;
     input wire [1:0] reg_dst;
@@ -120,17 +125,19 @@ module ID_EX(
     // writeback control in
     input wire [1:0] reg_write_data_sel;
     input wire rs;
+   
 
    // NEW 4/4/23 for branch/jump control
    dff sel_pc_reg (.q(ID_EX_sel_pc_new), .d(sel_pc_new), .clk(clk), .rst(1'b0));
    dff next_pc_reg [15:0](.q(ID_EX_pc_new), .d(pc_new), .clk(clk), .rst(1'b0));
 
+
     
-    dff rd_reg[2:0] (.q(ID_EX_rd), .d(rd), .clk(clk), .rst(rst));
+    dff rd_reg[2:0] (.q(ID_EX_rd), .d((stall | flush) ? ~rd : rd), .clk(clk), .rst(rst));
     dff halt_reg(.q(ID_EX_halt), .d(halt), .clk(clk), .rst(rst));
     // execute
     dff reg_dst_reg[1:0] (.q(ID_EX_reg_dst), .d(reg_dst), .clk(clk), .rst(rst));
-    dff reg_write_en_reg(.q(ID_EX_reg_write_en), .d(reg_write_en), .clk(clk), .rst(rst));
+    dff reg_write_en_reg(.q(ID_EX_reg_write_en), .d((stall | flush) ? 1'b0 : reg_write_en), .clk(clk), .rst(rst));
     dff swap_reg(.q(ID_EX_swap), .d(swap), .clk(clk), .rst(rst));
     dff alu_op_reg[3:0] (.q(ID_EX_alu_op), .d(alu_op), .clk(clk), .rst(rst));
     dff alu_cond_sel_reg[3:0] (.q(ID_EX_alu_cond_sel), .d(alu_cond_sel), .clk(clk), .rst(rst));
@@ -140,8 +147,8 @@ module ID_EX(
     dff sign_reg(.q(ID_EX_sign), .d(sign), .clk(clk), .rst(rst));
     dff Cin_reg(.q(ID_EX_Cin), .d(Cin), .clk(clk), .rst(rst));
     // memory
-    dff mem_write_reg(.q(ID_EX_mem_write), .d(mem_write), .clk(clk), .rst(rst));
-    dff mem_read_reg(.q(ID_EX_mem_read), .d(mem_read), .clk(clk), .rst(rst));
+    dff mem_write_reg(.q(ID_EX_mem_write), .d((stall | flush) ? 1'b0 : mem_write), .clk(clk), .rst(rst));
+    dff mem_read_reg(.q(ID_EX_mem_read), .d(flush ? 1'b0 : mem_read), .clk(clk), .rst(rst));
     //writeback
     dff reg_write_data_sel_reg[1:0] (.q(ID_EX_reg_write_data_sel), .d(reg_write_data_sel), .clk(clk), .rst(rst));
     dff rs_reg(.q(ID_EX_rs), .d(rs), .clk(clk), .rst(rst));

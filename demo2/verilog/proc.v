@@ -33,13 +33,16 @@ module proc (/*AUTOARG*/
 
    // pipeline wires
 
+   // pipeline control
+     // NEW 4/4/23
+   wire        ID_EX_sel_pc_new;
+   wire [15:0] ID_EX_pc_new;
+   wire        stall, check_rs, check_rt, flush;
+
    // IF/ID
    wire [15:0] IF_ID_instr;
    wire [15:0] IF_ID_pc_inc;
-
-   // NEW 4/4/23
-   wire        ID_EX_sel_pc_new;
-   wire [15:0] ID_EX_pc_new; 
+   wire        IF_ID_halt;
 
    // ID/EX
    wire [15:0] ID_EX_pc_inc;
@@ -97,19 +100,21 @@ module proc (/*AUTOARG*/
     control proc_cntrl(.halt(halt), .Cin(Cin), .pc_a_sel(pc_a_sel), .pc_b_sel(pc_b_sel), .br(br), .br_type(br_type), .sign(sign), .reg_write_reg_sel(reg_dst), 
     .reg_write_data_sel(reg_write_data_sel), .invA(invA), .invB(invB), .swap(swap), .reg_write_en(write_reg_en), .alu_b_sel(alu_sel_b), 
     .alu_cond_sel(alu_cond_sel), .alu_op(alu_opcode), .mem_read(mem_read), .mem_write(mem_write), .instr(IF_ID_instr), .jump(jump), .rs(rs), .jal(jal), .rst(rst), 
-    .sel_pc_new()); // unconnected, no longer coming from control
+    .check_rs(check_rs), .check_rt(check_rt), .stall(stall));
    
-   fetch fetch0(.instr(instr), .pc_inc(pc_inc), .next_pc(ID_EX_pc_new), .halt(MEM_WB_halt), .clk(clk), .rst(rst), .sel_pc_new(ID_EX_sel_pc_new));
+   fetch fetch0(.instr(instr), .pc_inc(pc_inc), .next_pc(ID_EX_pc_new), .halt(MEM_WB_halt), .clk(clk), .rst(rst), .sel_pc_new(ID_EX_sel_pc_new), .stall(stall));
 
    IF_ID IF_ID_reg(
-    .IF_ID_instr(IF_ID_instr), .pc_inc(pc_inc), .IF_ID_pc_inc(IF_ID_pc_inc),
+    .IF_ID_instr(IF_ID_instr), .pc_inc(pc_inc), .IF_ID_pc_inc(IF_ID_pc_inc), .IF_ID_halt(IF_ID_halt),
     .instr(instr), 
-    .clk(clk), .rst(rst));
+    .clk(clk), .rst(rst), .stall(stall), .halt(halt));
+   
+   stall_logic stall0(.ID_EX_rs(IF_ID_instr[10:8]), .ID_EX_rt(IF_ID_instr[7:5]),.EX_MEM_rd(EX_MEM_rd), .MEM_WB_rd(ID_EX_rd), .check_rs(check_rs), .check_rt(check_rt), .stall(stall));
 
    decode decode0(.read1(read1), .read2(read2), .reg_write(rd), .next_pc(next_pc), .pc_inc(IF_ID_pc_inc), .err(err), .instr(IF_ID_instr), 
    .wb_out(wb_out), .reg_dst(reg_dst), .clk(clk), .rst(rst), .write_reg_en(MEM_WB_reg_write_en), .sign_ext_11_16(sign_ext_11_16),
    .sign_ext_8_16(sign_ext_8_16), .sign_ext_5_16(sign_ext_5_16), .zero_ext_5_16(zero_ext_5_16), .pc_a_sel(pc_a_sel), 
-   .pc_b_sel(pc_b_sel), .br(br), .br_type(br_type), .jump(jump), .rs(rs), .jal(jal), .MEM_WB_rd(MEM_WB_rd), .sel_pc_new(sel_pc_new));
+   .pc_b_sel(pc_b_sel), .br(br), .br_type(br_type), .jump(jump), .rs(rs), .jal(jal), .MEM_WB_rd(MEM_WB_rd), .sel_pc_new(sel_pc_new), .stall(stall), .flush(flush));
 
    ID_EX ID_EX_reg(
     .pc_inc(IF_ID_pc_inc),
@@ -141,7 +146,7 @@ module proc (/*AUTOARG*/
     .ID_EX_pc_new(ID_EX_pc_new),
     .pc_new(next_pc),
     .sel_pc_new(sel_pc_new),
-    .halt(halt),
+    .halt(IF_ID_halt),
     .reg_dst(reg_dst),
     .reg_write_en(write_reg_en),
     .rd(rd),
@@ -164,7 +169,7 @@ module proc (/*AUTOARG*/
     .read1(read1),
     .read2(read2),
     .err(err),
-    .clk(clk), .rst(rst));
+    .clk(clk), .rst(rst), .stall(stall), .flush(flush));
 
    execute execute0(.ex_res(alu_res), .alu_cond_out(alu_cond_out), .data1(ID_EX_read1), .data2(ID_EX_read2), .invA(ID_EX_invA), .invB(ID_EX_invB), .Cin(ID_EX_Cin), 
    .Oper(ID_EX_alu_op), .alu_sel_b(ID_EX_alu_b_sel), .swap(ID_EX_swap), .alu_cond_sel(ID_EX_alu_cond_sel), .zero_ext_5_16(ID_EX_zero_ext_5_16), 
@@ -195,7 +200,7 @@ module proc (/*AUTOARG*/
     .ID_EX_mem_read(ID_EX_mem_read),
     .ID_EX_reg_write_data_sel(ID_EX_reg_write_data_sel),
     .ID_EX_read2(ID_EX_read2),
-    .clk(clk), .rst(rst));
+    .clk(clk), .rst(rst), .stall(stall), .flush(flush));
 
    memory memory0(.data(mem_data), .data2(EX_MEM_read2), .data_res(EX_MEM_ex_res), .wr(EX_MEM_mem_write), .en(EX_MEM_mem_read), 
    .halt(EX_MEM_halt), .clk(clk), .rst(rst));
@@ -221,7 +226,7 @@ module proc (/*AUTOARG*/
     .EX_MEM_reg_write_data_sel(EX_MEM_reg_write_data_sel),
     .EX_MEM_ex_res(EX_MEM_ex_res),
     .EX_MEM_alu_cond_out(EX_MEM_alu_cond_out),
-    .clk(clk), .rst(rst));
+    .clk(clk), .rst(rst), .flush(flush));
 
    wb wb0(.wb_out(wb_out), .alu_cond(MEM_WB_alu_cond_out), .pc_inc(MEM_WB_pc_inc), .data(MEM_WB_data), .alu_res(MEM_WB_ex_res), 
          .reg_write_sel(MEM_WB_reg_write_data_sel));

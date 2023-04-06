@@ -6,9 +6,9 @@
 */
 `default_nettype none
 module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_sel, invA, invB, swap, pc_a_sel, pc_b_sel, alu_b_sel, alu_cond_sel, 
-                alu_op, mem_read, mem_write, reg_write_en, instr, jump, rs, jal, rst, sel_pc_new);
+                alu_op, mem_read, mem_write, reg_write_en, instr, jump, rs, jal, rst, check_rt, check_rs, stall);
 
-    output reg halt, br, sign, Cin, invA, invB, swap, pc_a_sel, pc_b_sel, rs, jal, sel_pc_new;
+    output reg halt, br, sign, Cin, invA, invB, swap, pc_a_sel, pc_b_sel, rs, jal, check_rs, check_rt;
     /*
         halt: 1 halt, 0 else
         br: 1 to branch, 0 not
@@ -50,14 +50,18 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
 
     input wire [15:0] instr;
     input wire 	      rst;
+    input wire 	      stall;
+  
    
 
 //halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_sel, invA, invB, swap, pc_a_sel, pc_b_sel, alu_b_sel, alu_cond_sel, 
         //        alu_op, mem_read, mem_write, reg_write_en, instr, jump, rs);
     always @(*) begin
 
+        // stall control
+       check_rs = 0;
+       check_rt = 0;
         // fetch control
-        sel_pc_new = 1'b0;
         halt = 0;
         //decode control
         reg_write_en = 0;
@@ -110,6 +114,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b000;
                 alu_cond_sel = 4'b0000;
                 reg_write_data_sel = 2'b01;
+	        check_rs = stall ? 1'b1 : 1'b0;
+	        check_rt = stall ? 1'b1 : 1'b0;
             end
 
 	       5'b01000: begin // ADDI ✅
@@ -120,7 +126,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 reg_write_reg_sel = 2'b01; //instr[7:5]
                 alu_b_sel = 3'b011;  // sign extend 5 16
                 alu_cond_sel = 4'b0000; // dont care 
-                reg_write_en = 1'b1;             
+                reg_write_en = 1'b1;         
+		check_rs = 1'b1; 
 	       end
 
             5'b01001: begin // SUBI ✅
@@ -135,7 +142,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b011;  // zero extend 5 16
                 alu_cond_sel = 4'b0000; // dont care 
                 reg_write_en = 1;
-
+	        check_rs = 1'b1;
             end
 
             5'b01010: begin // XORI ✅
@@ -147,6 +154,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b111;  // zero extend 5 16
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1;
+      	        check_rs = 1'b1;
             end
 
             5'b01011: begin // ANDNI  ✅
@@ -159,6 +167,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b111;  // zero extend 5 16
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1;
+  	        check_rs = 1'b1;
             end
 
             5'b10100: begin // ROLI ✅
@@ -170,6 +179,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b100; // zero ex imm
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1;
+	        check_rs = 1'b1;
             end
 
             5'b10101: begin // SLLI ✅
@@ -181,6 +191,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b100; // zero ex imm
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1;
+	        check_rs = 1'b1;
             end
 
             5'b10110: begin // RORI ✅
@@ -192,6 +203,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b100; // zero ex imm
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1;
+	        check_rs = 1'b1;
             end
             5'b10111: begin // SRLI ✅
                 reg_write_data_sel = 2'b01; // alu res
@@ -202,6 +214,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b100; // zero ex imm
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1;
+	        check_rs = 1'b1;
             end
 
             5'b10000: begin // ST ✅
@@ -212,7 +225,9 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 sign = 1;
                 reg_write_reg_sel = 2'b01; //instr[7:5]
                 alu_b_sel = 3'b011;  // sign extend 5 16
-                alu_cond_sel = 4'b0000; // dont care 
+                alu_cond_sel = 4'b0000; // dont care
+	        check_rs = 1'b1;
+	        check_rt = 1'b1;
             end
 
             5'b10001: begin // LD ✅
@@ -225,6 +240,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b011;  // sign extend 5 16
                 alu_cond_sel = 4'b0000; // dont care 
                 reg_write_en = 1;   //write back
+	        check_rs = 1'b1;
             end
 
             5'b10011: begin // STU ✅
@@ -235,7 +251,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 sign = 1;
                 alu_b_sel = 3'b011;  // sign extend 5 16
                 alu_cond_sel = 4'b0000; // dont care 
-                reg_write_en = 1; 
+                reg_write_en = 1;
+	        check_rs = 1'b1;
             end
 
             5'b11001: begin // BTR ✅
@@ -245,6 +262,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 mem_write = 1'b0;
                 reg_write_en = 1; //write
                 reg_write_reg_sel = 2'b10; // instr[4:2]
+	        check_rs = 1'b1;
             end
 
             5'b11011: begin // ADD, SUB, XOR, ANDN
@@ -259,6 +277,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         reg_write_reg_sel = 2'b10; //instr[4:2]
                         alu_b_sel = 3'b001; //take reg 2 as alu in
                         alu_cond_sel = 4'b0000; //dont care
+		        check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                     2'b01: begin //SUB ✅
                         reg_write_data_sel = 2'b01; //alu res
@@ -272,6 +292,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         reg_write_reg_sel = 2'b10; //instr[4:2]
                         alu_b_sel = 3'b001; //take reg 2 as alu in
                         alu_cond_sel = 4'b0000; //dont care
+		       	check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                     2'b10: begin //XOR ✅
                         reg_write_data_sel = 2'b01; //alu res
@@ -282,7 +304,9 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         reg_write_reg_sel = 2'b10; //instr[4:2]
                         alu_b_sel = 3'b001; //take reg 2 as alu in
                         alu_cond_sel = 4'b0000; //dont care
-                    end
+		        check_rs = 1'b1;
+	                check_rt = 1'b1;                    
+		    end
                     2'b11: begin //ANDN ✅
                         reg_write_data_sel = 2'b01; //alu res
                         alu_op = 4'b0101; //and
@@ -293,6 +317,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         reg_write_reg_sel = 2'b10; //instr[4:2]
                         alu_b_sel = 3'b001; //take reg 2 as alu in
                         alu_cond_sel = 4'b0000; //dont care
+		       	check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                 endcase
             end
@@ -308,6 +334,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_b_sel = 3'b001; // read data
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
+		       	check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                     2'b00: begin // SLL ✅
                         reg_write_data_sel = 2'b01; // alu res
@@ -318,6 +346,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_b_sel = 3'b001;  // read data
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
+		       	check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                     2'b11: begin // ROR ✅
                         reg_write_data_sel = 2'b01; // alu res
@@ -328,6 +358,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_b_sel = 3'b001; // read data
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
+		       	check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                     2'b01: begin // SRL ✅
                         reg_write_data_sel = 2'b01; // alu res
@@ -338,6 +370,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                         alu_b_sel = 3'b001; // read data
                         alu_cond_sel = 4'b0000; // dont care
                         reg_write_en = 1;
+		       	check_rs = 1'b1;
+	                check_rt = 1'b1;
                     end
                 endcase
             end
@@ -352,6 +386,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_cond_sel = 4'b0000; // no
                 sign = 1'b1; // sign matters
                 reg_write_en = 1;
+	       	check_rs = 1'b1;
+	        check_rt = 1'b1;
             end
 
             5'b11101: begin // SLT ✅
@@ -366,6 +402,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 Cin = 1; //subtract
                 //invB = 1; //subtract
                 reg_write_en = 1;
+	       	check_rs = 1'b1;
+	        check_rt = 1'b1;
             end
 
             5'b11110: begin // SLE ✅
@@ -379,6 +417,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 Cin = 1; //subtract
                 //invB = 1; //subtract
                 reg_write_en = 1;
+	       	check_rs = 1'b1;
+	        check_rt = 1'b1;
             end
 
             5'b11111: begin // SCO ✅
@@ -391,26 +431,32 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_cond_sel = 4'b0000; // no
                 sign = 1'b1; // sign matters
                 reg_write_en = 1;
+	       	check_rs = 1'b1;
+	        check_rt = 1'b1;
             end
 
             5'b01100: begin // BEQZ ✅
                 br = 1'b1; // take branch
                 br_type = 2'b00; //equal to
+	       	check_rs = 1'b1;
             end
 
             5'b01101: begin // BNEZ ✅
                 br = 1'b1; // take branch
                 br_type = 2'b01; //not equal to
+	        check_rs = 1'b1;
             end
 
             5'b01110: begin // BLTZ ✅
                 br = 1'b1; // take branch
                 br_type = 2'b10; //less than
+	        check_rs = 1'b1;
             end
 
             5'b01111: begin // BGEZ ✅
                 br = 1'b1; // take branch
                 br_type = 2'b11; //greater than
+	        check_rs = 1'b1;
             end
 
             5'b11000: begin // LBI ✅
@@ -421,7 +467,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 Cin = 1'b0;
                 alu_b_sel = 3'b010;
                 alu_cond_sel = 4'b0000;
-                reg_write_en = 1'b1;
+               reg_write_en = 1'b1;
             end
 
             5'b10010: begin // SLBI ✅
@@ -432,10 +478,10 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b010;  // dont care here
                 alu_cond_sel = 4'b0000; // dont care
                 reg_write_en = 1; //write
+	       check_rs = 1'b1;
             end
 
             5'b00100: begin // J disp ✅
-	       sel_pc_new = 1'b1;
                 jump = 1; // we jump
                 pc_a_sel = 1'b1; // pc_inc
                 pc_b_sel = 1'b1; // se 11 bit imm
@@ -448,7 +494,6 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
             end
 
             5'b00101: begin // JR ✅
-	       sel_pc_new = 1'b1;
                 halt = 1'b0;
                 br = 1'b0;
                 jump = 1; // jumping
@@ -463,7 +508,6 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
             end
 
             5'b00110: begin // JAL ✅
-	       sel_pc_new = 1'b1;
                 jal = 1;
                 jump = 1;
                 reg_write_en = 1; // write reg
@@ -479,7 +523,6 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
             end
 
             5'b00111: begin // JALR ✅
-	       sel_pc_new = 1'b1;
                 jal = 1;
                 jump = 1; // we jump
                 rs = 1;
