@@ -1,29 +1,15 @@
-Reading line: // Original test: ./neel/hw4/problem6/j_0.asm
-Reading line: // Author: neel
+Reading line: // Original test: ./shojaei/hw4/problem6/xori_2.asm
+Reading line: // Author: shojaei
 Reading line: // Test source code follows
 Reading line: 
 Reading line: 
-Reading line: //Tests j  with negative offset
-Reading line: 
-Reading line: lbi r1,255
-Reading line: j 4
-Reading line: lbi r2,20
-Reading line: halt
-Reading line: lbi r2,30
-Reading line: j -8
+Reading line: lbi r1, 24
+Reading line: xori r2, r1, 7
 Reading line: halt
 @0
 c1
-ff
-20
-04
-c2
-14
-00
-00
-c2
-1e
-27
-f8
+18
+51
+47
 00
 00

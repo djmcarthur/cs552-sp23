@@ -68,7 +68,7 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
    
    assign sel_pc_new = (next_pc == pc_inc) ? 1'b0 : 1'b1; // If next_pc is not pc_inc, taking branch or jump
 
-   assign flush = sel_pc_new & ~jal & ~jump;  // Meaningless assign, just to get more clear naming
+   assign flush = sel_pc_new & ~jump;  // Meaningless assign, just to get more clear naming
 
    assign reg_in = (jal) ? pc_inc : wb_out;
 
