@@ -76,12 +76,12 @@ module EX_MEM(
     dff rd_reg[2:0] (.q(EX_MEM_rd), .d(ID_EX_rd), .clk(clk), .rst(rst));
     dff reg_dst_reg[1:0] (.q(EX_MEM_reg_dst), .d(ID_EX_reg_dst), .clk(clk), .rst(rst));
     // memory
-    dff mem_write_reg(.q(EX_MEM_mem_write), .d(flush ? 1'b0 : ID_EX_mem_write), .clk(clk), .rst(rst));
-    dff mem_read_reg(.q(EX_MEM_mem_read), .d(flush ? 1'b0 : ID_EX_mem_read), .clk(clk), .rst(rst));
+    dff mem_write_reg(.q(EX_MEM_mem_write), .d(ID_EX_mem_write), .clk(clk), .rst(rst));
+    dff mem_read_reg(.q(EX_MEM_mem_read), .d(ID_EX_mem_read), .clk(clk), .rst(rst));
     //writeback
     dff reg_write_data_sel_reg[1:0] (.q(EX_MEM_reg_write_data_sel), .d(ID_EX_reg_write_data_sel), .clk(clk), .rst(rst));
     dff rs_reg(.q(EX_MEM_rs), .d(ID_EX_rs), .clk(clk), .rst(rst));
-    dff reg_write_en_reg(.q(EX_MEM_reg_write_en), .d(flush ? 1'b0 : ID_EX_reg_write_en), .clk(clk), .rst(rst));
+    dff reg_write_en_reg(.q(EX_MEM_reg_write_en), .d(ID_EX_reg_write_en), .clk(clk), .rst(rst));
     dff pc_reg [15:0](.q(EX_MEM_pc_inc), .d(pc_inc), .clk(clk), .rst(rst));
 
     // alu res

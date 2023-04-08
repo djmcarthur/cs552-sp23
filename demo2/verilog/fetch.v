@@ -18,7 +18,7 @@ module fetch (instr, pc_inc, next_pc, halt, clk, rst, sel_pc_new, stall);
    input wire  sel_pc_new, stall;
    
 
-   assign nxt_pc = ((halt & (~rst)) | stall) ? instr_addr : 
+   assign nxt_pc = ((halt & (~rst)) | (stall & ~sel_pc_new)) ? instr_addr : 
 		   sel_pc_new ? next_pc : pc_inc;
 
    cla_16b add_pc(.sum(pc_inc), .c_out(), .a(instr_addr), .b(16'd2), .c_in(1'b0));

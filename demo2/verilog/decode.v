@@ -68,12 +68,12 @@ module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg
    
    assign sel_pc_new = (next_pc == pc_inc) ? 1'b0 : 1'b1; // If next_pc is not pc_inc, taking branch or jump
 
-   assign flush = sel_pc_new & ~jump;  // Meaningless assign, just to get more clear naming
+   assign flush = sel_pc_new & ~stall; 
 
-   assign reg_in = (jal) ? pc_inc : wb_out;
+   //assign reg_in = (jal) ? pc_inc : wb_out;
 
    regFile_bypass regFile0(.read1Data(read1), .read2Data(read2), .err(), .clk(clk), .rst(rst), .read1RegSel(instr[10:8]), .read2RegSel(instr[7:5]), 
-            .writeRegSel(MEM_WB_rd), .writeData(reg_in), .writeEn(write_reg_en));
+            .writeRegSel(MEM_WB_rd), .writeData(wb_out), .writeEn(write_reg_en));
 
    cla_16b adder(.sum(add_out), .c_out(), .a(read1), .b('0), .c_in('0));
 

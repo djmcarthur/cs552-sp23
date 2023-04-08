@@ -253,6 +253,8 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_cond_sel = 4'b0000; // dont care 
                 reg_write_en = 1;
 	        check_rs = 1'b1;
+	       check_rt = 1'b1;
+	       
             end
 
             5'b11001: begin // BTR ✅
