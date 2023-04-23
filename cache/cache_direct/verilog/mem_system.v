@@ -43,7 +43,6 @@ module mem_system(/*AUTOARG*/
    reg [2:0] 	     mem_off;
    reg [15:0] 	     mem_in;
    wire [15:0] 	     mem_addr;
-
    // coming out out mem or cache
    wire 	     cache_err,mem_err, hit, dirty, valid;
    wire [4:0] 	     tag_out;
@@ -92,12 +91,14 @@ module mem_system(/*AUTOARG*/
    localparam IDLE	= 4'd0;
    localparam COMPR  	= 4'd1;
    localparam COMPW  	= 4'd2;
+   // Read new block from MEMORY
    localparam ALLOC0 	= 4'd3;
    localparam ALLOC1 	= 4'd4;
    localparam ALLOC2 	= 4'd5;
    localparam ALLOC3 	= 4'd6;
    localparam ALLOC4	= 4'd7;
    localparam ALLOC5 	= 4'd8;
+   // Write old block to MEMORY
    localparam WB0	= 4'd9;
    localparam WB1  	= 4'd10;
    localparam WB2    	= 4'd11;
@@ -130,7 +131,7 @@ module mem_system(/*AUTOARG*/
 				   IDLE;
 		      comp = (Wr | Rd) ? 1'b1 : 1'b0;
 		      offset = Addr[2:0];
-		      write = (Wr) ? 1'b1 : 1'b0;
+		      //write = (Wr) ? 1'b1 : 1'b0;
 		      Stall = 1'b0;
 	     end
 	     COMPR: begin
@@ -144,59 +145,71 @@ module mem_system(/*AUTOARG*/
 		      //valid_in = (hit & valid) ? 1'b1 : 1'b0;
 		      Stall = (hit & valid) ? 1'b0:1'b1;
 	              CacheHit = (hit & valid) ? 1'b1 : 1'b0;
+		      DataOut = data_out;
 		
 	     end
 	     COMPW: begin
 		     enable = 1'b1;
-		     next_state = (~dirty) ? ALLOC0 :
-                                    WB0;
+		     next_state = (mem_stall) ? COMPW :
+			          (dirty) ? WB0 :
+                                  (hit & valid) ? IDLE :
+				  ALLOC0;
 				   //(hit & ~ valid) ? WB0 :
                                    //IDLE;
-		     //Done = (hit & valid) ? 1'b1 : 1'b0;
+		     Done = (hit & ~dirty & valid) ? 1'b1 : 1'b0;
+		     valid_in = (hit & ~dirty & valid) ? 1'b1 : 1'b0;
 		     //Stall = (hit & valid) ? 1'b0:1'b1;
+		     rd = ((~dirty & ~hit) | (hit & ~valid)) ? 1'b1 : 1'b0;
+		     cache_data_in = (hit & valid) ? DataIn : mem_out;
+		     mem_off = 3'b000;
+		     CacheHit = (hit & valid) ? 1'b1 : 1'b0;
+		     write = (hit & valid) ? 1'b1 : 1'b0;
+
 	     end
 	     ALLOC0: begin
 		     enable = 1'b1;
 		     rd = 1'b1;
 //		     write = 1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b000;
-//		     next_state = mem_stall ? ALLOC0 : ALLOC1;
-		    // next_state = mem_stall ? ALLOC0 : ALLOC1;
-		    next_state = ALLOC1;
+		     mem_off = 3'b010;
+		     next_state = mem_stall ? ALLOC0 : ALLOC1;
+//		     next_state = ALLOC1;
 	     end
 	     ALLOC1: begin
                      enable = 1'b1;
 		     rd = 1'b1;
 //		     write = 1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b010;
-                     next_state = mem_stall ? ALLOC0 : ALLOC2;
+		     mem_off = 3'b100;
+                     next_state = mem_stall ? ALLOC1 : ALLOC2;
              end
 	     ALLOC2: begin
                      enable = 1'b1;
 		     rd = 1'b1;
 		     write = mem_stall ? 1'b0 :1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b100;
+		     mem_off = 3'b110;
                      next_state = mem_stall ? ALLOC2 : ALLOC3;
              end
              ALLOC3: begin
                      enable = 1'b1;
-		     rd = 1'b1;
+		     //rd = 1'b1;
 		     write = 1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b110;
+		     //mem_off = 3'b110;
                      next_state = mem_stall ? ALLOC3 : ALLOC4;
+		     valid_in = 1'b1;
              end
 	     ALLOC4: begin
                      enable = 1'b1;
                      //rd = 1'b1;
 		     write = 1'b1;
-                     cache_data_in = mem_out;
+                     //cache_data_in = mem_out;
  //                    mem_off = 3'b10;
-                     next_state = mem_stall ? ALLOC4 : ALLOC5;
+                     //next_state = mem_stall ? ALLOC4 : IDLE;
+		     next_state = IDLE;
 		     valid_in = 1'b1;
+		     Done = 1'b1;
              end
              ALLOC5: begin
                      enable = 1'b1;
@@ -235,6 +248,9 @@ module mem_system(/*AUTOARG*/
 		     offset = 3'b110;
                      mem_tag = tag_out;
 	             valid_in = 1'b1;
+		     rd = 1'b1;
+                     cache_data_in = mem_out;
+                     mem_off = 3'b000;
 	    end
 	default: begin
 	   end
