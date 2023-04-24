@@ -102,7 +102,7 @@ module mem_system(/*AUTOARG*/
    localparam WB1  	= 4'd10;
    localparam WB2    	= 4'd11;
    localparam WB3	= 4'd12;
-
+   localparam ALLOC6    = 4'd13;   
 
    dff state_ff[3:0](.q(state),.d(next_state),.clk(clk),.rst(rst));
 
@@ -152,11 +152,11 @@ module mem_system(/*AUTOARG*/
 		     enable = 1'b1;
 		     next_state = (hit & valid) ? IDLE :
 				  (dirty & valid) ? WB0 :
-				  mem_stall ? COMPW :
+				  //mem_stall:
 				  ALLOC0;
 		     Done = (hit & valid) ? 1'b1 : 1'b0;
 		     rd = ((~hit & ~dirty) | ~valid) ? 1'b1 : 1'b0;
-		     write = (hit & valid) ? 1'b1 : 1'b0;
+		     //write = (hit & valid) ? 1'b1 : 1'b0;
 		     cache_data_in = (hit & valid) ? DataIn : mem_out;
 		     mem_off = 3'b000;
 		     valid_in = 1'b1;
@@ -208,25 +208,32 @@ module mem_system(/*AUTOARG*/
                      enable = 1'b1;
                      //rd = 1'b1;
 		     write = 1'b1;
-                     //cache_data_in = mem_out;
+                     cache_data_in = mem_out;
  //                  mem_off = 3'b10;
-                     next_state = mem_stall ? ALLOC4 : ALLOC5;
+                     next_state = mem_stall ? ALLOC4 :
+				  Wr ? ALLOC5 :
+				  ALLOC6;
 		     offset = 3'b110;
-		     //Done = mem_stall ? 1'b0 : 1'b1;
+		    // Done = Wr ? 1'b0 : 1'b1;
 		     valid_in = 1'b1;
 		     DataOut = data_out;
              end
-             ALLOC5: begin
+             ALLOC5: begin // For writing new data after allocating
                      enable = 1'b1;
 		     //rd = 1'b1;
 		     Done = 1'b1;
                      next_state = IDLE;
 		     valid_in = 1'b1;
                      write = 1'b1;
-		
-   
 		     //Stall = 1'b0;
              end
+	    ALLOC6: begin  // For reading out data after allocating
+                     enable = 1'b1;
+		     //rd = 1'b1;
+	             //comp = 1'b1;
+		     Done = 1'b1;
+                     next_state = IDLE;
+	    end
 	   /*  WB0: begin
 		     enable = 1'b1;
 		     wr = 1'b1;
