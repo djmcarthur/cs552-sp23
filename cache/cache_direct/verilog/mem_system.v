@@ -43,6 +43,7 @@ module mem_system(/*AUTOARG*/
    reg [2:0] 	     mem_off;
    reg [15:0] 	     mem_in;
    wire [15:0] 	     mem_addr;
+
    // coming out out mem or cache
    wire 	     cache_err,mem_err, hit, dirty, valid;
    wire [4:0] 	     tag_out;
@@ -81,7 +82,7 @@ module mem_system(/*AUTOARG*/
                      .rst               (rst),
                      .createdump        (createdump),
                      .addr              (mem_addr),
-                     .data_in           (data_out),
+                     .data_in           (mem_in),
                      .wr                (wr),
                      .rd                (rd));
    
@@ -91,20 +92,18 @@ module mem_system(/*AUTOARG*/
    localparam IDLE	= 4'd0;
    localparam COMPR  	= 4'd1;
    localparam COMPW  	= 4'd2;
-   // Read new block from MEMORY
    localparam ALLOC0 	= 4'd3;
    localparam ALLOC1 	= 4'd4;
    localparam ALLOC2 	= 4'd5;
    localparam ALLOC3 	= 4'd6;
    localparam ALLOC4	= 4'd7;
    localparam ALLOC5 	= 4'd8;
-   // Write old block to MEMORY
    localparam WB0	= 4'd9;
    localparam WB1  	= 4'd10;
    localparam WB2    	= 4'd11;
    localparam WB3	= 4'd12;
-
-
+   localparam ALLOC6    = 4'd13;   
+   localparam ALLOC7	= 4'd14;
    dff state_ff[3:0](.q(state),.d(next_state),.clk(clk),.rst(rst));
 
    always @(*) begin
@@ -122,6 +121,8 @@ module mem_system(/*AUTOARG*/
       Done = 1'b0;
       Stall = 1'b1;
       CacheHit = 1'b0;
+      DataOut = data_out;
+      mem_in = data_out;
 
       case(state)
 	      IDLE: begin
@@ -131,127 +132,185 @@ module mem_system(/*AUTOARG*/
 				   IDLE;
 		      comp = (Wr | Rd) ? 1'b1 : 1'b0;
 		      offset = Addr[2:0];
-		      //write = (Wr) ? 1'b1 : 1'b0;
+		      write = (Wr) ? 1'b1 : 1'b0;
 		      Stall = 1'b0;
 	     end
 	     COMPR: begin
 		      enable = 1'b1;
-		      next_state = (~hit & ~dirty) ? ALLOC0 :
-			           (~hit & dirty) ? WB0 :
-				   (hit & ~valid) ? ALLOC0 :
-				   IDLE;
-		      
-		      Done = (hit & valid) ? 1'b1 : 1'b0;
-		      //valid_in = (hit & valid) ? 1'b1 : 1'b0;
-		      Stall = (hit & valid) ? 1'b0:1'b1;
+		      comp = 1'b0;
+		      wr = (~hit & dirty & valid) ? 1'b1 : 1'b0;
+		      mem_tag = (~hit & dirty & valid) ? tag_out : Addr[15:11];
+		      offset = (~hit & dirty & valid) ? 3'b000 : Addr[2:0]; 
+		      next_state = (~hit & dirty & valid) ? WB0 :
+		                   (hit & valid) ? IDLE:
+				   ALLOC0;		   
+		      Done = (hit & valid) ? 1'b1 : 1'b0; 
+		      //Stall = (hit & valid) ? 1'b0:1'b1;
 	              CacheHit = (hit & valid) ? 1'b1 : 1'b0;
 		      DataOut = data_out;
-		
+		      mem_off = 3'b000;
+		      offset = ((~hit & ~dirty) | ~valid) ? 3'b000 : Addr[2:0];
+		      cache_data_in = mem_out;
 	     end
 	     COMPW: begin
 		     enable = 1'b1;
-		     next_state = (mem_stall) ? COMPW :
-			          (dirty) ? WB0 :
-                                  (hit & valid) ? IDLE :
+		     comp = 1'b0;
+		     write = 1'b0;
+		     next_state = (hit & valid) ? IDLE :
+				  (dirty & valid) ? WB0 :
+				  //mem_stall:
 				  ALLOC0;
-				   //(hit & ~ valid) ? WB0 :
-                                   //IDLE;
-		     Done = (hit & ~dirty & valid) ? 1'b1 : 1'b0;
-		     valid_in = (hit & ~dirty & valid) ? 1'b1 : 1'b0;
-		     //Stall = (hit & valid) ? 1'b0:1'b1;
-		     rd = ((~dirty & ~hit) | (hit & ~valid)) ? 1'b1 : 1'b0;
+		     Done = (hit & valid) ? 1'b1 : 1'b0;
+		     rd = ((~hit & ~dirty) | ~valid) ? 1'b1 : 1'b0;
+		     //write = (hit & valid) ? 1'b1 : 1'b0;
 		     cache_data_in = (hit & valid) ? DataIn : mem_out;
 		     mem_off = 3'b000;
+		     valid_in = 1'b1;
 		     CacheHit = (hit & valid) ? 1'b1 : 1'b0;
-		     write = (hit & valid) ? 1'b1 : 1'b0;
-
+		     mem_tag = (~hit & dirty & valid) ? tag_out : Addr[15:11];
+		     wr = (dirty & valid) ? 1'b1 : 1'b0;
+		     offset = (dirty & valid) ? 3'b000 : Addr[2:0];
 	     end
 	     ALLOC0: begin
 		     enable = 1'b1;
 		     rd = 1'b1;
-//		     write = 1'b1;
+		     write = 1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b010;
-		     next_state = mem_stall ? ALLOC0 : ALLOC1;
-//		     next_state = ALLOC1;
+		     mem_off = 3'b000;
+		     
+//		     next_state = mem_stall ? ALLOC0 : ALLOC1;
+		    // next_state = mem_stall ? ALLOC0 : ALLOC1;
+		    next_state = ALLOC1;
 	     end
 	     ALLOC1: begin
                      enable = 1'b1;
 		     rd = 1'b1;
-//		     write = 1'b1;
+		     write = 1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b100;
-                     next_state = mem_stall ? ALLOC1 : ALLOC2;
+		     offset = 3'b000;
+		     mem_off = 3'b010;
+                     next_state = mem_stall ? ALLOC0 : ALLOC2;
              end
 	     ALLOC2: begin
                      enable = 1'b1;
 		     rd = 1'b1;
 		     write = mem_stall ? 1'b0 :1'b1;
 		     cache_data_in = mem_out;
-		     mem_off = 3'b110;
+		     offset = 3'b000;
+		     mem_off = 3'b100;
                      next_state = mem_stall ? ALLOC2 : ALLOC3;
              end
              ALLOC3: begin
                      enable = 1'b1;
-		     //rd = 1'b1;
+		     rd = 1'b1;
 		     write = 1'b1;
 		     cache_data_in = mem_out;
-		     //mem_off = 3'b110;
+		     mem_off = 3'b110;
+		     offset = 3'b010;
                      next_state = mem_stall ? ALLOC3 : ALLOC4;
-		     valid_in = 1'b1;
+		     valid_in = 1'b1;	
              end
 	     ALLOC4: begin
                      enable = 1'b1;
                      //rd = 1'b1;
 		     write = 1'b1;
-                     //cache_data_in = mem_out;
- //                    mem_off = 3'b10;
-                     //next_state = mem_stall ? ALLOC4 : IDLE;
-		     next_state = IDLE;
+                     cache_data_in = mem_out;
+ //                  mem_off = 3'b10;
+                     next_state = ALLOC6;
+		     offset = 3'b100;
+		     //`Done = mem_stall | Wr ? 1'b0 : 1'b1;
 		     valid_in = 1'b1;
-		     Done = 1'b1;
+		     DataOut = data_out;
              end
-             ALLOC5: begin
+             ALLOC5: begin // For writing new data after allocating
                      enable = 1'b1;
 		     //rd = 1'b1;
-		     write = 1'b1;
 		     Done = 1'b1;
-                     next_state = mem_stall ? ALLOC5 : IDLE;
+                     next_state = IDLE;
 		     valid_in = 1'b1;
+                     write = 1'b1;
 		     //Stall = 1'b0;
+		     comp =1'b1;
              end
-	     WB0: begin
+	    ALLOC6: begin //for writing to the cache
+	    	     enable = 1'b1;
+		     offset = 3'b110;
+		     cache_data_in = mem_out;
+		     write = 1'b1;
+		     valid_in = 1'b1;
+		     next_state = mem_stall ? ALLOC4 :
+			     	  Wr ? ALLOC5 :
+				  ALLOC7;
+	     end
+	    ALLOC7: begin  // For reading out data after allocating
+                     enable = 1'b1;
+		     offset = Addr[2:0];
+		     //rd = 1'b1;
+	             //comp = 1'b1;
+		     Done = 1'b1;
+                     next_state = IDLE;
+	    end
+	   /*  WB0: begin
 		     enable = 1'b1;
 		     wr = 1'b1;
 		     next_state = WB1;
-		     offset = 3'b000;
+		     offset = 3'b010;
 		     mem_tag = tag_out;
 	    end	     
 	    WB1: begin
 		     enable = 1'b1;
 		     wr = 1'b1;
 		     next_state = WB2;
-		     offset = 3'b010;
+		     offset = 3'b100;
 	             mem_tag = tag_out;
 	    end
 	    WB2: begin
 		     enable = 1'b1;
 		     wr = 1'b1;
 		     next_state = WB3;
-		     offset = 3'b100;
+		     offset = 3'b110;
 	             mem_tag = tag_out;
 	    end
 	    WB3: begin
 		     enable = 1'b1;
-		     wr = 1'b1;
-		     next_state = ALLOC0;
-		     offset = 3'b110;
-                     mem_tag = tag_out;
-	             valid_in = 1'b1;
 		     rd = 1'b1;
-                     cache_data_in = mem_out;
-                     mem_off = 3'b000;
+		     next_state = ALLOC0;
+		     offset = 3'b000;
+	             valid_in = 1'b1;
+	      
+	    end*/
+	     WB0: begin
+		     enable = 1'b1;
+		     wr = 1'b1;
+		     next_state = WB1;
+		     mem_off = 3'b010;
+		     offset = 3'b010;
+		     mem_tag = tag_out;
+	    end	     
+	    WB1: begin
+		     enable = 1'b1;
+		     offset = 3'b100;
+		     wr = 1'b1;
+		     next_state = WB2;
+		     mem_off = 3'b100;
+	             mem_tag = tag_out;
 	    end
+	    WB2: begin
+		     enable = 1'b1;
+		     offset = 3'b110;
+		     wr = 1'b1;
+		     next_state = WB3;
+		     mem_off = 3'b110;
+	             mem_tag = tag_out;
+	    end
+	    WB3: begin
+		     enable = 1'b1;
+		     offset = 3'b000;
+		     rd = 1'b1;
+		     next_state = ALLOC1;
+		     mem_off = 3'b000;
+	             valid_in = 1'b1;
+	    end 
 	default: begin
 	   end
       endcase // case (state)
