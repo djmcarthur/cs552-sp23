@@ -113,31 +113,35 @@ module mem_system(/*AUTOARG*/
   assign DataOut = cache_sel ? data_outW1 : data_outW0;
 
 
-  localparam IDLE	= 4'd0;
-  localparam COMPR	= 4'd1;
-  localparam COMPW	= 4'd2;
+  localparam IDLE	= 4'h0;
+  localparam COMPR	= 4'h1;
+  localparam COMPW	= 4'h2;
   // Read new block from MEMORY
-  localparam ALLOC0	= 4'd3;
-  localparam ALLOC1	= 4'd4;
-  localparam ALLOC2 	= 4'd5;
-  localparam ALLOC3	= 4'd6;
-  localparam ALLOC4	= 4'd7;
-  localparam ALLOC5	= 4'd8;
+  localparam ALLOC0	= 4'h3;
+  localparam ALLOC1	= 4'h4;
+  localparam ALLOC2 	= 4'h5;
+  localparam ALLOC3	= 4'h6;
+  localparam ALLOC4	= 4'h7;
+  localparam ALLOC5	= 4'h8;
+  localparam ALLOC6 	= 4'h9;
+  localparam ALLOC7	= 4'hA;
   // way 0 writeback
-  localparam WB0_0	= 4'd9;
-  localparam WB1_0	= 4'd10;
-  localparam WB2_0	= 4'd11;
-  localparam WB3_0	= 4'd12;
-  // way 1 writeback
-  localparam WB0_1	= 4'd13;
-  localparam WB1_1	= 4'd14;
-  localparam WB2_1	= 4'd15;
-  localparam WB3_1 	= 4'd16;
+  localparam WB0	= 4'hB;
+  localparam WB1	= 4'hC;
+  localparam WB2	= 4'hD;
+  localparam WB3	= 4'hE;
 
 
+  // victimway algorithm params
+  wire victim_out;
+  reg victim_in;
+
+  // define flip flops
   dff state_ff[4:0](.q(state),.d(next_state),.clk(clk),.rst(rst));
+  dff victimway(.q(victim_out),.d(victim_in),.clk(clk),.rst(rst));
 
   always @(*) begin
+	victim_out = 1'b0;
 	Done = 1'b0;
 	Stall = 1'b1;
 	write = 1'b0;
@@ -163,10 +167,25 @@ module mem_system(/*AUTOARG*/
 			Stall = 1'b0;
 		end
 		COMPR: begin
+			enable = 1'b1;
 			comp = 1'b1;
+			write = 1'b0;
+			// hit if either way's hit output goes high (defined
+			// above in assign)
+			CacheHit = (hit) ? 1'b1 : 1'b0;
+			// on each read of the cache, invert the state of
+			// victimway
+			victim_out = ~victim_in;
 		end
 		COMPW: begin
+			enable = 1'b1;
 			comp = 1'b1;
+			write = 1'b0;
+			// hit if either way's hit output goes high
+			CacheHit = (hit) ? 1'b1 : 1'b0;
+			// on each write of the cache, invert the state of
+			// victimway
+			victim_out = ~victim_in;
 		end
 		ALLOC0: begin
 		end
@@ -180,21 +199,17 @@ module mem_system(/*AUTOARG*/
 		end
 		ALLOC5: begin
 		end
-		WB0_0: begin
+		ALLOC6: begin
 		end
-		WB1_0: begin
+		ALLOC7: begin
 		end
-		WB2_0: begin
+		WB0: begin
 		end
-		WB3_0: begin
+		WB1: begin
 		end
-		WB0_1: begin
+		WB2: begin
 		end
-		WB1_1: begin
-		end
-		WB2_1: begin
-		end
-		WB3_1: begin
+		WB3: begin
 		end
 	endcase
 
