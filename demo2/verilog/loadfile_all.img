@@ -1,15 +1,15 @@
-Reading line: // Original test: ./shojaei/hw4/problem6/xori_2.asm
-Reading line: // Author: shojaei
+Reading line: // Original test: ./atessmer/hw4/problem6/slt_2.asm
+Reading line: // Author: atessmer
 Reading line: // Test source code follows
 Reading line: 
 Reading line: 
-Reading line: lbi r1, 24
-Reading line: xori r2, r1, 7
+Reading line: lbi r1, 255
+Reading line: slt r3, r1, r1
 Reading line: halt
 @0
 c1
-18
-51
-47
+ff
+e9
+2c
 00
 00

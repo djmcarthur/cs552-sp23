@@ -1,9 +1,3 @@
-/*
-   CS/ECE 552 Spring '20
-  
-   Filename        : execute.v
-   Description     : This is the overall module for the execute stage of the processor.
-*/
 `default_nettype none
 module execute (ex_res, alu_cond_out, data1, data2, invA, invB, Cin, Oper, alu_sel_b, swap, alu_cond_sel, zero_ext_5_16, 
 sign_ext_8_16, sign_ext_5_16, sign, clk, rst);

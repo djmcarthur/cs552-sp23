@@ -65,6 +65,7 @@ module proc (/*AUTOARG*/
    wire [15:0] ID_EX_read1;
    wire [15:0] ID_EX_read2;
    wire ID_EX_err;
+   wire ID_EX_stall;
    wire [15:0] ID_EX_sign_ext_11_16;   
    wire [15:0] ID_EX_sign_ext_5_16;
    wire [15:0] ID_EX_sign_ext_8_16;
@@ -74,6 +75,7 @@ module proc (/*AUTOARG*/
    wire [15:0] EX_MEM_pc_inc;
    
    wire EX_MEM_halt;
+   wire EX_MEM_stall;
    wire [2:0] EX_MEM_rd;
    wire [1:0] EX_MEM_reg_dst;
    wire [15:0] EX_MEM_ex_res;
@@ -109,7 +111,7 @@ module proc (/*AUTOARG*/
     .instr(instr), 
     .clk(clk), .rst(rst), .stall(stall), .halt(halt), .flush(flush));
    
-   stall_logic stall0(.ID_EX_rs(IF_ID_instr[10:8]), .ID_EX_rt(IF_ID_instr[7:5]),.EX_MEM_rd(EX_MEM_rd), .MEM_WB_rd(ID_EX_rd), .check_rs(check_rs), .check_rt(check_rt), .stall(stall));
+   stall_logic stall0(.IF_ID_rs(IF_ID_instr[10:8]), .IF_ID_rt(IF_ID_instr[7:5]),.EX_MEM_rd(EX_MEM_rd), .ID_EX_rd(ID_EX_rd), .ID_EX_stall(ID_EX_stall), .EX_MEM_stall(EX_MEM_stall), .check_rs(check_rs), .check_rt(check_rt), .stall(stall));
 
    decode decode0(.read1(read1), .read2(read2), .reg_write(rd), .next_pc(next_pc), .pc_inc(IF_ID_pc_inc), .err(err), .instr(IF_ID_instr), 
    .wb_out(wb_out), .reg_dst(reg_dst), .clk(clk), .rst(rst), .write_reg_en(MEM_WB_reg_write_en), .sign_ext_11_16(sign_ext_11_16),
@@ -144,6 +146,7 @@ module proc (/*AUTOARG*/
     .ID_EX_zero_ext_5_16(ID_EX_zero_ext_5_16),
     .ID_EX_sel_pc_new(ID_EX_sel_pc_new),
     .ID_EX_pc_new(ID_EX_pc_new),
+    .ID_EX_stall(ID_EX_stall),
     .pc_new(next_pc),
     .sel_pc_new(sel_pc_new),
     .halt(IF_ID_halt),
@@ -169,6 +172,8 @@ module proc (/*AUTOARG*/
     .read1(read1),
     .read2(read2),
     .err(err),
+    .decode_rs(IF_ID_instr[10:8]),
+    .decode_rt(IF_ID_instr[7:5]),
     .clk(clk), .rst(rst), .stall(stall), .flush(flush));
 
    execute execute0(.ex_res(alu_res), .alu_cond_out(alu_cond_out), .data1(ID_EX_read1), .data2(ID_EX_read2), .invA(ID_EX_invA), .invB(ID_EX_invB), .Cin(ID_EX_Cin), 
@@ -189,6 +194,7 @@ module proc (/*AUTOARG*/
     .EX_MEM_mem_read(EX_MEM_mem_read),
     .EX_MEM_reg_write_data_sel(EX_MEM_reg_write_data_sel),
     .EX_MEM_read2(EX_MEM_read2),
+    .EX_MEM_stall(EX_MEM_stall),
     .alu_cond_out(alu_cond_out),
     .ex_res(alu_res),
     .ID_EX_halt(ID_EX_halt),
@@ -200,6 +206,7 @@ module proc (/*AUTOARG*/
     .ID_EX_mem_read(ID_EX_mem_read),
     .ID_EX_reg_write_data_sel(ID_EX_reg_write_data_sel),
     .ID_EX_read2(ID_EX_read2),
+    .ID_EX_stall(ID_EX_stall),
     .clk(clk), .rst(rst), .stall(stall), .flush(flush));
 
    memory memory0(.data(mem_data), .data2(EX_MEM_read2), .data_res(EX_MEM_ex_res), .wr(EX_MEM_mem_write), .en(EX_MEM_mem_read), 

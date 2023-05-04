@@ -1,5 +1,5 @@
 /*
-   CS/ECE 552, Spring '22
+   CS/ECE 552, Spring '23
    Homework #3, Problem #1
   
    This module creates a 16-bit register.  It has 1 write port, 2 read

@@ -12,6 +12,7 @@ module EX_MEM(
     EX_MEM_mem_read,
     EX_MEM_reg_write_data_sel,
     EX_MEM_read2,
+    EX_MEM_stall,
     alu_cond_out,
     ex_res,
     pc_inc,
@@ -24,6 +25,7 @@ module EX_MEM(
     ID_EX_mem_read,
     ID_EX_reg_write_data_sel,
     ID_EX_read2,
+    ID_EX_stall,
     clk, rst, stall, flush);
 
     input wire clk, rst;
@@ -34,7 +36,7 @@ module EX_MEM(
    input wire [15:0]  pc_inc;
    output wire [15:0] EX_MEM_pc_inc;
    
-   
+    output wire EX_MEM_stall;
     // pipe alu res out
     output wire [1:0] EX_MEM_reg_dst;
     output wire [15:0] EX_MEM_ex_res;
@@ -50,6 +52,7 @@ module EX_MEM(
     output wire EX_MEM_rs;
     output wire [1:0] EX_MEM_reg_write_data_sel;
 
+    input wire ID_EX_stall;
     input wire ID_EX_halt;
     input wire [2:0] ID_EX_rd;
     // alu res
@@ -72,6 +75,7 @@ module EX_MEM(
     input wire       flush;
 
 
+    dff stall_reg(.q(EX_MEM_stall),.d(ID_EX_stall),.clk(clk),.rst(rst));
     dff halt_reg(.q(EX_MEM_halt), .d(ID_EX_halt), .clk(clk), .rst(rst));
     dff rd_reg[2:0] (.q(EX_MEM_rd), .d(ID_EX_rd), .clk(clk), .rst(rst));
     dff reg_dst_reg[1:0] (.q(EX_MEM_reg_dst), .d(ID_EX_reg_dst), .clk(clk), .rst(rst));

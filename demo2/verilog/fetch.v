@@ -1,5 +1,5 @@
 /*
-   CS/ECE 552 Spring '20
+   CS/ECE 552 Spring '23
   
    Filename        : fetch.v
    Description     : This is the module for the overall fetch stage of the processor.

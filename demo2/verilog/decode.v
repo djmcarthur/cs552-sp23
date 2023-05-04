@@ -1,9 +1,3 @@
-/*
-   CS/ECE 552 Spring '22
-  
-   Filename        : decode.v
-   Description     : This is the module for the overall decode stage of the processor.
-*/
 `default_nettype none
 module decode (read1, read2, reg_write, next_pc, pc_inc, err, instr, wb_out, reg_dst, write_reg_en, MEM_WB_rd,
                sign_ext_11_16, sign_ext_5_16, sign_ext_8_16, zero_ext_5_16, pc_a_sel, pc_b_sel, br, br_type, jump, rs, jal, clk, rst, sel_pc_new, stall, flush);

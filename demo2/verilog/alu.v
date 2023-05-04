@@ -1,16 +1,3 @@
-/*
-    CS/ECE 552 Spring '22
-    Homework #2, Problem 2
-
-    A multi-bit ALU module (defaults to 16-bit). It is designed to choose
-    the correct operation to perform on 2 multi-bit numbers from rotate
-    left, shift left, shift right arithmetic, shift right logical, add,
-    or, xor, & and.  Upon doing this, it should output the multi-bit result
-    of the operation, as well as drive the output signals Zero and Overflow
-    (OFL).
-    (.InA(InA), .InB(InB), .Cin(Cin), .Cout(Cout), .Oper(Oper), .invA(invA), .invB(invB), .equals(equals), 
-            .gt(gt), .gte(gte), .lt(lt), .lte(lte), .sign(sign), .Out(ex_res), .Zero(Zero), .Ofl(Ofl));
-*/
 `default_nettype none
 module alu (InA, InB, Cin, Cout, Oper, invA, invB, equals, gt, gte, lt, lte, sign, Out, Zero, Ofl);
 
@@ -99,8 +86,8 @@ module alu (InA, InB, Cin, Cout, Oper, invA, invB, equals, gt, gte, lt, lte, sig
 
     // Condition codes
     //assign lt = {~inA_op[15], inA_op[14:0]} < {~inB_op[15], inB_op[14:0]}; //CHANGE WONT PASS VCHECK
-    assign lt = {~inA_op[15], inA_op[14:0]} < {~inB_op[15], inB_op[14:0]};
-    //((add_out != 16'h0000) & (add_out[15] == ~overflow)) ? 1'b1 : 1'b0;
+    //assign lt = {~inA_op[15], inA_op[14:0]} < {~inB_op[15], inB_op[14:0]};
+    assign lt = ((add_out != 16'h0000) & (add_out[15] == ~overflow)) ? 1'b1 : 1'b0;
 
     assign equals = inA_op == inB_op;
 

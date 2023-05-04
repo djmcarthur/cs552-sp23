@@ -227,7 +227,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 alu_b_sel = 3'b011;  // sign extend 5 16
                 alu_cond_sel = 4'b0000; // dont care
 	        check_rs = 1'b1;
-	        check_rt = 1'b1;
+		check_rt = 1'b1;
             end
 
             5'b10001: begin // LD ✅
@@ -507,6 +507,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 Cin = 1'b0;
                 alu_b_sel = 3'b010;
                 alu_cond_sel = 4'b0000;
+		check_rs = 1'b1;
             end
 
             5'b00110: begin // JAL ✅
@@ -538,6 +539,7 @@ module control(halt, Cin, br, br_type, sign, reg_write_data_sel, reg_write_reg_s
                 reg_write_reg_sel = 2'b11; // R7
                 alu_b_sel = 3'b010; // sign ext 8_16
                 alu_cond_sel = 4'b0000;
+		check_rs = 1'b1;
             end
 
 	    5'b00010: begin // siic (Do nothing)

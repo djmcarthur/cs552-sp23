@@ -1,10 +1,3 @@
-
-/*
-   CS/ECE 552 Spring '20
-  
-   Filename        : wb.v
-   Description     : This is the module for the overall Write Back stage of the processor.
-*/
 `default_nettype none
 module wb (wb_out, alu_cond, pc_inc, data, alu_res, reg_write_sel);
 

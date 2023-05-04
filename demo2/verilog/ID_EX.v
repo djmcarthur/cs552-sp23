@@ -26,6 +26,7 @@ module ID_EX(
     ID_EX_zero_ext_5_16,
     ID_EX_pc_new,
     ID_EX_sel_pc_new,
+    ID_EX_stall,
     sel_pc_new,
     pc_new,
     pc_inc,
@@ -52,6 +53,8 @@ module ID_EX(
     read1,
     read2,
     err,
+    decode_rt,
+    decode_rs,
     clk, rst, stall, flush);
 
     input wire clk, rst;
@@ -84,6 +87,7 @@ module ID_EX(
     output wire [1:0] ID_EX_reg_write_data_sel;
     output wire ID_EX_rs;
     output wire [15:0] ID_EX_pc_inc;
+    output wire ID_EX_stall;
 
 
     // If stalling gotta pass NOP equivalent down the line (i.e. no mem action or wb)
@@ -125,13 +129,19 @@ module ID_EX(
     // writeback control in
     input wire [1:0] reg_write_data_sel;
     input wire rs;
+    input wire [2:0] decode_rt;
+    input wire [2:0] decode_rs;
    
+    wire [2:0] decode_reg_logic;
+
+//    assign decode_reg_logic = 
+    dff stall_reg(.q(ID_EX_stall), .d(stall), .clk(clk), .rst(rst));
 
    // NEW 4/4/23 for branch/jump control
    dff sel_pc_reg (.q(ID_EX_sel_pc_new), .d(stall ? 1'b0 : sel_pc_new), .clk(clk), .rst(1'b0));
    dff next_pc_reg [15:0](.q(ID_EX_pc_new), .d(pc_new), .clk(clk), .rst(1'b0));
     
-    dff rd_reg[2:0] (.q(ID_EX_rd), .d((stall) ? 3'b111 : rd), .clk(clk), .rst(rst));
+    dff rd_reg[2:0] (.q(ID_EX_rd), .d(rd), .clk(clk), .rst(rst));
     dff halt_reg(.q(ID_EX_halt), .d(halt), .clk(clk), .rst(rst));
     // execute
     dff reg_dst_reg[1:0] (.q(ID_EX_reg_dst), .d(reg_dst), .clk(clk), .rst(rst));
