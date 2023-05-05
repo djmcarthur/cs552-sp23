@@ -1,14 +1,15 @@
-/*
-   CS/ECE 552 Spring '22
-  
-   Filename        : memory.v
-   Description     : This module contains all components in the Memory stage of the 
-                     processor.
-*/
 `default_nettype none
-module memory (/* TODO: Add appropriate inputs/outputs for your memory stage here*/);
+module memory (data, data2, data_res, wr, en, halt, clk, rst);
 
-   // TODO: Your code here
+   output wire [15:0] data;
+
+   input wire [15:0] data2, data_res;
+   input wire halt, clk, rst;
+
+   input wire en, wr;
+
+   memory2c data_mem(.data_out(data), 
+                     .data_in(data2), .addr(data_res), .enable(en), .wr(wr), .createdump(halt), .clk(clk), .rst(rst));
    
 endmodule
 `default_nettype wire
